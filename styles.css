@@ -418,6 +418,47 @@ h2 {
   transform: scale(0.96);
 }
 
+.rotate-prompt {
+  position: absolute;
+  z-index: 20;
+  inset: 0;
+  display: none;
+  place-items: center;
+  padding: 28px;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(102, 192, 244, 0.22), transparent 32%),
+    linear-gradient(180deg, rgba(8, 17, 25, 0.98), rgba(5, 9, 15, 0.98));
+  color: #f5fbff;
+}
+
+.rotate-prompt strong,
+.rotate-prompt span {
+  display: block;
+}
+
+.rotate-prompt strong {
+  margin-top: 18px;
+  font-size: 1.35rem;
+  font-weight: 950;
+}
+
+.rotate-prompt span {
+  margin-top: 8px;
+  color: #9fb7c8;
+  font-size: 0.92rem;
+  font-weight: 800;
+}
+
+.phone-icon {
+  width: 72px;
+  height: 112px;
+  border: 4px solid rgba(245, 251, 255, 0.88);
+  border-radius: 14px;
+  box-shadow: 0 0 28px rgba(102, 192, 244, 0.24);
+  transform: rotate(90deg);
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -473,6 +514,52 @@ h2 {
 @media (hover: none), (pointer: coarse), (max-width: 900px) {
   .touch-controls {
     display: flex;
+  }
+}
+
+@media (hover: none) and (orientation: portrait) {
+  .rotate-prompt {
+    display: grid;
+  }
+}
+
+@media (hover: none) and (orientation: landscape) and (max-height: 520px) {
+  .steam-chrome {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  .brand-mark {
+    width: 24px;
+    height: 24px;
+  }
+
+  .brand,
+  .profile {
+    font-size: 0.72rem;
+  }
+
+  .overlay {
+    padding-top: 54px;
+  }
+
+  .touch-controls {
+    padding: 0 18px 14px;
+  }
+
+  .touch-stick {
+    width: 96px;
+    height: 96px;
+  }
+
+  .touch-stick span {
+    width: 42px;
+    height: 42px;
+  }
+
+  .touch-locate {
+    width: 66px;
+    height: 66px;
   }
 }
 

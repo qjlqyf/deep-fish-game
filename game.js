@@ -17,6 +17,12 @@ const touchLocate = document.querySelector("#touch-locate");
 
 const VIEW = { width: 1280, height: 720 };
 const WORLD = { width: 1280, height: 5200 };
+const LIMITS = {
+  bubbles: 260,
+  particles: 180,
+  fish: 56,
+  edibleSchoolFish: 70,
+};
 const keys = new Set();
 const touchMove = { active: false, id: null, x: 0, y: 0 };
 const achievementsTotal = 4;
@@ -44,6 +50,12 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
+}
+
+function requestLandscape() {
+  if (screen.orientation?.lock) {
+    screen.orientation.lock("landscape").catch(() => {});
+  }
 }
 
 const difficulty = {
@@ -389,6 +401,7 @@ function buildObstacles() {
 }
 
 function addBubble(x, y, scale = 1) {
+  if (bubbles.length >= LIMITS.bubbles) bubbles.splice(0, bubbles.length - LIMITS.bubbles + 1);
   bubbles.push({
     x,
     y,
@@ -401,6 +414,8 @@ function addBubble(x, y, scale = 1) {
 }
 
 function addBurst(x, y, color, amount = 14) {
+  const room = Math.max(0, LIMITS.particles - particles.length);
+  amount = Math.min(amount, room);
   for (let i = 0; i < amount; i += 1) {
     const angle = random(0, Math.PI * 2);
     const speed = random(40, 210);
@@ -424,7 +439,7 @@ function pickSpecies(y = player.y) {
 }
 
 function spawnFish(initial = false, options = {}) {
-  const maxFish = options.edibleOnly ? 92 : 72;
+  const maxFish = options.edibleOnly ? LIMITS.edibleSchoolFish : LIMITS.fish;
   if (!initial && fish.length >= maxFish) return;
 
   const settings = difficulty[chosenLevel];
@@ -485,7 +500,7 @@ function spawnEdibleSchool() {
   const schoolSpecies = getBiomeAt(baseY).species.filter((species) => !["angler", "giant"].includes(species));
 
   for (let i = 0; i < count; i += 1) {
-    if (fish.length >= 92) break;
+    if (fish.length >= LIMITS.edibleSchoolFish) break;
     spawnFish(false, {
       direction,
       edibleOnly: true,
@@ -1792,6 +1807,7 @@ function drawVent(plant) {
 function drawBubbles() {
   ctx.save();
   for (const bubble of bubbles) {
+    if (!isVisibleY(bubble.y, 60)) continue;
     ctx.globalAlpha = bubble.alpha;
     ctx.strokeStyle = "#c9fff6";
     ctx.lineWidth = 1.5;
@@ -1809,6 +1825,7 @@ function drawBubbles() {
 
 function drawParticles() {
   for (const particle of particles) {
+    if (!isVisibleY(particle.y, 80)) continue;
     const alpha = clamp(particle.life / particle.maxLife, 0, 1);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = particle.color;
@@ -1986,7 +2003,7 @@ function drawScene() {
   ctx.translate(0, -cameraY);
   drawBubbles();
 
-  const sortedFish = [...fish].sort((a, b) => a.radius - b.radius);
+  const sortedFish = fish.filter((item) => isVisibleY(item.y, 180)).sort((a, b) => a.radius - b.radius);
   for (const item of sortedFish) {
     drawFishBody(item);
   }
@@ -2077,7 +2094,6 @@ function updatePlayer(dt) {
     player.vy = Math.min(0, player.vy);
     pressureNoticeTimer = 1.8;
   }
-  resolveObstacleCollisions();
   player.radius += (player.targetRadius - player.radius) * Math.min(1, dt * 5);
   player.invincible = Math.max(0, player.invincible - dt);
 
@@ -2134,16 +2150,19 @@ function updateFish(dt) {
 }
 
 function updateBubbles(dt) {
-  for (const bubble of bubbles) {
+  for (let i = bubbles.length - 1; i >= 0; i -= 1) {
+    const bubble = bubbles[i];
     bubble.y -= bubble.speed * dt;
     bubble.x += Math.sin(elapsed * 1.2 + bubble.phase) * bubble.wobble * dt;
-    if (bubble.y < cameraY - 40 || bubble.y > cameraY + VIEW.height + 260) {
-      bubble.y = clamp(cameraY + VIEW.height + random(0, 180), 40, WORLD.height - 20);
-      bubble.x = random(0, WORLD.width);
+    if (bubble.y < cameraY - 120 || bubble.y > cameraY + VIEW.height + 360) {
+      bubbles.splice(i, 1);
     }
   }
 
-  if (Math.random() < dt * 4) addBubble(player.x - player.dir * player.radius, player.y + player.radius * 0.25, 0.72);
+  const trailRate = player.radius > 110 ? 0.8 : player.radius > 72 ? 1.3 : 2.1;
+  if (bubbles.length < LIMITS.bubbles * 0.82 && Math.random() < dt * trailRate) {
+    addBubble(player.x - player.dir * player.radius, player.y + player.radius * 0.25, 0.55);
+  }
 }
 
 function updateParticles(dt) {
@@ -2179,9 +2198,10 @@ function handleCollisions() {
       if (eaten === 10) showAchievement("ten-fish", "十连吞噬");
       const settings = difficulty[chosenLevel];
       player.targetRadius = Math.min(settings.goalRadius, player.targetRadius + item.radius * settings.growth);
-      addBurst(item.x, item.y, item.colors[0], 16);
+      addBurst(item.x, item.y, item.colors[0], player.radius > 110 ? 6 : 12);
       cameraShake = Math.min(6, cameraShake + 1.8);
-      for (let j = 0; j < 4; j += 1) addBubble(item.x, item.y, 0.9);
+      const biteBubbles = player.radius > 110 ? 1 : player.radius > 72 ? 2 : 3;
+      for (let j = 0; j < biteBubbles; j += 1) addBubble(item.x, item.y, 0.72);
       if (player.targetRadius >= settings.goalRadius - 0.2 && getBiomeAt(player.y).id === "abyss") startFinale();
     } else if (deadly && !shielded) {
       addBurst(player.x, player.y, "#ff7268", 30);
@@ -2279,7 +2299,10 @@ levelButtons.forEach((button) => {
   });
 });
 
-startButton.addEventListener("click", resetGame);
+startButton.addEventListener("click", () => {
+  requestLandscape();
+  resetGame();
+});
 restartButton.addEventListener("click", () => {
   result.classList.add("hidden");
   menu.classList.remove("hidden");
@@ -2335,6 +2358,7 @@ function updateTouchStick(event) {
 
 touchStick.addEventListener("pointerdown", (event) => {
   event.preventDefault();
+  requestLandscape();
   touchMove.active = true;
   touchMove.id = event.pointerId;
   touchStick.setPointerCapture(event.pointerId);
@@ -2356,6 +2380,7 @@ touchStick.addEventListener("pointercancel", resetTouchStick);
 
 touchLocate.addEventListener("pointerdown", (event) => {
   event.preventDefault();
+  requestLandscape();
   selfPingTimer = 1.9;
 });
 
