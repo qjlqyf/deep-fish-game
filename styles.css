@@ -17,10 +17,16 @@ body {
   height: 100%;
   min-height: 100%;
   margin: 0;
+  overscroll-behavior: none;
 }
 
 body {
+  position: fixed;
+  inset: 0;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
   background:
     radial-gradient(circle at 18% 14%, rgba(37, 168, 208, 0.24), transparent 28%),
     radial-gradient(circle at 82% 26%, rgba(236, 134, 78, 0.18), transparent 22%),
@@ -556,12 +562,12 @@ h2 {
   }
 
   .touch-controls {
-    padding: 0 18px 14px 36px;
+    padding: 0 18px 24px 42px;
   }
 
   .touch-stick-zone {
-    width: 168px;
-    height: 168px;
+    width: 184px;
+    height: 184px;
   }
 
   .touch-stick {
@@ -582,12 +588,12 @@ h2 {
 
 @media (max-width: 560px) {
   .touch-controls {
-    padding: 0 16px 18px 28px;
+    padding: 0 16px 28px 34px;
   }
 
   .touch-stick-zone {
-    width: 188px;
-    height: 188px;
+    width: 204px;
+    height: 204px;
   }
 
   .touch-stick {

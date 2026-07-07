@@ -25,7 +25,7 @@ const LIMITS = {
   edibleSchoolFish: 70,
 };
 const keys = new Set();
-const touchMove = { active: false, id: null, x: 0, y: 0 };
+const touchMove = { active: false, id: null, mode: null, x: 0, y: 0 };
 const achievementsTotal = 4;
 const unlockedAchievements = new Set(JSON.parse(localStorage.getItem("deep-fish-achievements") || "[]"));
 let chosenLevel = "easy";
@@ -252,7 +252,7 @@ function getBiomeAt(y = player.y) {
 
 function maxDiveY() {
   const growth = Math.max(0, player.radius - 24);
-  return clamp(880 + growth * 51, 880, WORLD.height - player.radius - 40);
+  return clamp(1280 + growth * 58, 1280, WORLD.height - player.radius - 40);
 }
 
 function nextLockedBiome() {
@@ -285,9 +285,11 @@ function resize() {
 }
 
 function viewTransform() {
+  const scale = Math.max(canvas.clientWidth / VIEW.width, canvas.clientHeight / VIEW.height);
   return {
-    x: canvas.clientWidth / VIEW.width,
-    y: canvas.clientHeight / VIEW.height,
+    x: (canvas.clientWidth - VIEW.width * scale) / 2,
+    y: (canvas.clientHeight - VIEW.height * scale) / 2,
+    scale,
   };
 }
 
@@ -1992,7 +1994,8 @@ function drawScene() {
   const transform = viewTransform();
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
   ctx.save();
-  ctx.scale(transform.x, transform.y);
+  ctx.translate(transform.x, transform.y);
+  ctx.scale(transform.scale, transform.scale);
 
   if (cameraShake > 0) {
     ctx.translate(random(-cameraShake, cameraShake), random(-cameraShake, cameraShake));
@@ -2336,18 +2339,19 @@ window.addEventListener("resize", resize);
 function resetTouchStick() {
   touchMove.active = false;
   touchMove.id = null;
+  touchMove.mode = null;
   touchMove.x = 0;
   touchMove.y = 0;
   touchKnob.style.transform = "translate(-50%, -50%)";
 }
 
-function updateTouchStick(event) {
+function updateTouchStick(clientX, clientY) {
   const rect = touchStick.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
   const max = rect.width * 0.42;
-  const rawX = event.clientX - centerX;
-  const rawY = event.clientY - centerY;
+  const rawX = clientX - centerX;
+  const rawY = clientY - centerY;
   const distance = Math.hypot(rawX, rawY);
   if (distance < max * 0.08) {
     touchMove.x = 0;
@@ -2363,28 +2367,85 @@ function updateTouchStick(event) {
   touchKnob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 }
 
-touchStickZone.addEventListener("pointerdown", (event) => {
-  event.preventDefault();
+function startTouchControl(id, mode, clientX, clientY) {
   requestLandscape();
   touchMove.active = true;
-  touchMove.id = event.pointerId;
-  touchStickZone.setPointerCapture(event.pointerId);
-  updateTouchStick(event);
-});
+  touchMove.id = id;
+  touchMove.mode = mode;
+  updateTouchStick(clientX, clientY);
+}
 
-touchStickZone.addEventListener("pointermove", (event) => {
-  if (!touchMove.active || event.pointerId !== touchMove.id) return;
+touchStickZone.addEventListener("pointerdown", (event) => {
   event.preventDefault();
-  updateTouchStick(event);
+  if (touchMove.active && touchMove.mode === "touch") return;
+  startTouchControl(event.pointerId, "pointer", event.clientX, event.clientY);
+  if (touchStickZone.setPointerCapture) {
+    try {
+      touchStickZone.setPointerCapture(event.pointerId);
+    } catch {
+      // iOS may refuse capture during fast edge gestures; window listeners still track movement.
+    }
+  }
 });
 
-touchStickZone.addEventListener("pointerup", (event) => {
-  if (event.pointerId !== touchMove.id) return;
+window.addEventListener("pointermove", (event) => {
+  if (!touchMove.active || touchMove.mode !== "pointer" || event.pointerId !== touchMove.id) return;
+  event.preventDefault();
+  updateTouchStick(event.clientX, event.clientY);
+});
+
+window.addEventListener("pointerup", (event) => {
+  if (touchMove.mode !== "pointer" || event.pointerId !== touchMove.id) return;
   resetTouchStick();
 });
 
-touchStickZone.addEventListener("pointercancel", resetTouchStick);
-touchStickZone.addEventListener("lostpointercapture", resetTouchStick);
+window.addEventListener("pointercancel", (event) => {
+  if (touchMove.mode !== "pointer" || event.pointerId !== touchMove.id) return;
+  resetTouchStick();
+});
+
+touchStickZone.addEventListener(
+  "touchstart",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch) return;
+    event.preventDefault();
+    startTouchControl(touch.identifier, "touch", touch.clientX, touch.clientY);
+  },
+  { passive: false }
+);
+
+window.addEventListener(
+  "touchmove",
+  (event) => {
+    if (!touchMove.active || touchMove.mode !== "touch") return;
+    const touch = Array.from(event.touches).find((item) => item.identifier === touchMove.id);
+    if (!touch) return;
+    event.preventDefault();
+    updateTouchStick(touch.clientX, touch.clientY);
+  },
+  { passive: false }
+);
+
+window.addEventListener(
+  "touchend",
+  (event) => {
+    if (touchMove.mode !== "touch") return;
+    const ended = Array.from(event.changedTouches).some((item) => item.identifier === touchMove.id);
+    if (ended) resetTouchStick();
+  },
+  { passive: false }
+);
+
+window.addEventListener(
+  "touchcancel",
+  (event) => {
+    if (touchMove.mode !== "touch") return;
+    const cancelled = Array.from(event.changedTouches).some((item) => item.identifier === touchMove.id);
+    if (cancelled) resetTouchStick();
+  },
+  { passive: false }
+);
 
 touchLocate.addEventListener("pointerdown", (event) => {
   event.preventDefault();
