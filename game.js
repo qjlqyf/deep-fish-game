@@ -11,6 +11,7 @@ const resultCopy = document.querySelector("#result-copy");
 const achievementToast = document.querySelector("#achievement");
 const achievementTitle = document.querySelector("#achievement-title");
 const achievementCount = document.querySelector("#achievement-count");
+const touchStickZone = document.querySelector("#touch-stick-zone");
 const touchStick = document.querySelector("#touch-stick");
 const touchKnob = document.querySelector("#touch-knob");
 const touchLocate = document.querySelector("#touch-locate");
@@ -2344,10 +2345,16 @@ function updateTouchStick(event) {
   const rect = touchStick.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
-  const max = rect.width * 0.36;
+  const max = rect.width * 0.42;
   const rawX = event.clientX - centerX;
   const rawY = event.clientY - centerY;
   const distance = Math.hypot(rawX, rawY);
+  if (distance < max * 0.08) {
+    touchMove.x = 0;
+    touchMove.y = 0;
+    touchKnob.style.transform = "translate(-50%, -50%)";
+    return;
+  }
   const scale = distance > max ? max / distance : 1;
   const x = rawX * scale;
   const y = rawY * scale;
@@ -2356,27 +2363,28 @@ function updateTouchStick(event) {
   touchKnob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 }
 
-touchStick.addEventListener("pointerdown", (event) => {
+touchStickZone.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   requestLandscape();
   touchMove.active = true;
   touchMove.id = event.pointerId;
-  touchStick.setPointerCapture(event.pointerId);
+  touchStickZone.setPointerCapture(event.pointerId);
   updateTouchStick(event);
 });
 
-touchStick.addEventListener("pointermove", (event) => {
+touchStickZone.addEventListener("pointermove", (event) => {
   if (!touchMove.active || event.pointerId !== touchMove.id) return;
   event.preventDefault();
   updateTouchStick(event);
 });
 
-touchStick.addEventListener("pointerup", (event) => {
+touchStickZone.addEventListener("pointerup", (event) => {
   if (event.pointerId !== touchMove.id) return;
   resetTouchStick();
 });
 
-touchStick.addEventListener("pointercancel", resetTouchStick);
+touchStickZone.addEventListener("pointercancel", resetTouchStick);
+touchStickZone.addEventListener("lostpointercapture", resetTouchStick);
 
 touchLocate.addEventListener("pointerdown", (event) => {
   event.preventDefault();

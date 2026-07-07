@@ -370,7 +370,7 @@ h2 {
   pointer-events: none;
 }
 
-.touch-stick,
+.touch-stick-zone,
 .touch-locate {
   pointer-events: auto;
   touch-action: none;
@@ -378,10 +378,19 @@ h2 {
   -webkit-user-select: none;
 }
 
+.touch-stick-zone {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 180px;
+  height: 180px;
+}
+
 .touch-stick {
   position: relative;
   width: 128px;
   height: 128px;
+  pointer-events: none;
   border: 1px solid rgba(177, 230, 246, 0.32);
   border-radius: 50%;
   background:
@@ -550,6 +559,11 @@ h2 {
     padding: 0 18px 14px 36px;
   }
 
+  .touch-stick-zone {
+    width: 168px;
+    height: 168px;
+  }
+
   .touch-stick {
     width: 112px;
     height: 112px;
@@ -569,6 +583,11 @@ h2 {
 @media (max-width: 560px) {
   .touch-controls {
     padding: 0 16px 18px 28px;
+  }
+
+  .touch-stick-zone {
+    width: 188px;
+    height: 188px;
   }
 
   .touch-stick {

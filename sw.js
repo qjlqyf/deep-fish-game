@@ -1,4 +1,4 @@
-const CACHE_NAME = "deep-fish-surprise-v4";
+const CACHE_NAME = "deep-fish-surprise-v5";
 const ASSETS = [
   "./",
   "./index.html",
