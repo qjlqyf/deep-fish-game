@@ -302,7 +302,7 @@ function resetGame() {
   shotFired = false;
   ripplePulse = 0;
   selfPingTimer = 5.4;
-  introHintTimer = 8.5;
+  introHintTimer = 3.2;
   swarmWarningTimer = 0;
   fish.length = 0;
   bubbles.length = 0;

@@ -544,17 +544,17 @@ h2 {
   }
 
   .touch-controls {
-    padding: 0 18px 14px;
+    padding: 0 18px 14px 36px;
   }
 
   .touch-stick {
-    width: 96px;
-    height: 96px;
+    width: 112px;
+    height: 112px;
   }
 
   .touch-stick span {
-    width: 42px;
-    height: 42px;
+    width: 50px;
+    height: 50px;
   }
 
   .touch-locate {
@@ -565,17 +565,17 @@ h2 {
 
 @media (max-width: 560px) {
   .touch-controls {
-    padding: 0 16px 18px;
+    padding: 0 16px 18px 28px;
   }
 
   .touch-stick {
-    width: 112px;
-    height: 112px;
+    width: 126px;
+    height: 126px;
   }
 
   .touch-stick span {
-    width: 48px;
-    height: 48px;
+    width: 56px;
+    height: 56px;
   }
 
   .touch-locate {
