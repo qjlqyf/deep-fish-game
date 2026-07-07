@@ -259,8 +259,15 @@ function nextLockedBiome() {
   return biomes.find((biome) => biome.range[0] > limit);
 }
 
+function cameraLimitY() {
+  const worldLimit = WORLD.height - VIEW.height;
+  const pressureLimit = maxDiveY();
+  if (pressureLimit >= WORLD.height - player.radius - 42) return worldLimit;
+  return clamp(pressureLimit - VIEW.height + 96, 0, worldLimit);
+}
+
 function updateCamera(dt) {
-  const target = clamp(player.y - VIEW.height * 0.52, 0, WORLD.height - VIEW.height);
+  const target = clamp(player.y - VIEW.height * 0.52, 0, cameraLimitY());
   cameraY += (target - cameraY) * Math.min(1, dt * 4.4);
 }
 
@@ -276,16 +283,10 @@ function resize() {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
 
-function viewScale() {
-  return Math.min(canvas.clientWidth / VIEW.width, canvas.clientHeight / VIEW.height);
-}
-
-function viewOffset() {
-  const scale = viewScale();
+function viewTransform() {
   return {
-    x: (canvas.clientWidth - VIEW.width * scale) / 2,
-    y: (canvas.clientHeight - VIEW.height * scale) / 2,
-    scale,
+    x: canvas.clientWidth / VIEW.width,
+    y: canvas.clientHeight / VIEW.height,
   };
 }
 
@@ -1987,11 +1988,10 @@ function drawFinaleOverlay() {
 }
 
 function drawScene() {
-  const offset = viewOffset();
+  const transform = viewTransform();
   ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
   ctx.save();
-  ctx.translate(offset.x, offset.y);
-  ctx.scale(offset.scale, offset.scale);
+  ctx.scale(transform.x, transform.y);
 
   if (cameraShake > 0) {
     ctx.translate(random(-cameraShake, cameraShake), random(-cameraShake, cameraShake));
