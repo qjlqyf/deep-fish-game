@@ -1,0 +1,19 @@
+{
+  "name": "深海吞噬",
+  "short_name": "深海吞噬",
+  "description": "一个可在手机和电脑上玩的水下探索大鱼吃小鱼游戏。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d1722",
+  "theme_color": "#0d1722",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

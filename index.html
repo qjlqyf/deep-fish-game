@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0d1722" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="深海吞噬" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>深海吞噬</title>
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="steam-chrome" aria-label="Steam 风格顶部栏">
+        <div class="brand">
+          <span class="brand-mark"></span>
+          <strong>DEEP LIBRARY</strong>
+        </div>
+        <div class="profile">
+          <span></span>
+          <strong>PLAYER</strong>
+        </div>
+      </header>
+
+      <canvas id="game" width="1280" height="720" aria-label="深海吞噬游戏画布"></canvas>
+
+      <section id="menu" class="overlay">
+        <div class="menu-panel">
+          <div class="game-cover" aria-hidden="true">
+            <div class="cover-glow"></div>
+            <div class="cover-title">深海吞噬</div>
+            <div class="cover-fish"></div>
+          </div>
+          <div class="menu-content">
+            <p class="eyebrow">已安装</p>
+            <h1>深海吞噬</h1>
+            <div class="stats-row" aria-label="游戏状态">
+              <span>本地游戏</span>
+              <span>云同步</span>
+              <span id="achievement-count">成就 0/4</span>
+            </div>
+            <div class="difficulty" role="group" aria-label="难度">
+              <button class="level is-active" data-level="easy">低</button>
+              <button class="level" data-level="normal">中</button>
+              <button class="level" data-level="hard">高</button>
+            </div>
+            <button id="start" class="primary">开始游戏</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="result" class="overlay hidden">
+        <div class="menu-panel result-panel">
+          <p id="result-kicker" class="eyebrow">Game Over</p>
+          <h2 id="result-title">再来一局</h2>
+          <p id="result-copy" class="result-copy"></p>
+          <button id="restart" class="primary">重新开始</button>
+        </div>
+      </section>
+
+      <aside id="achievement" class="achievement hidden" aria-live="polite">
+        <div class="achievement-icon">★</div>
+        <div>
+          <span>成就已解锁</span>
+          <strong id="achievement-title">第一口</strong>
+        </div>
+      </aside>
+
+      <section id="touch-controls" class="touch-controls" aria-label="手机触控操作">
+        <div id="touch-stick" class="touch-stick" aria-label="移动摇杆">
+          <span id="touch-knob"></span>
+        </div>
+        <button id="touch-locate" class="touch-locate" type="button">1P</button>
+      </section>
+    </main>
+
+    <script src="./game.js"></script>
+  </body>
+</html>
