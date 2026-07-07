@@ -25,7 +25,15 @@ const LIMITS = {
   edibleSchoolFish: 70,
 };
 const keys = new Set();
-const touchMove = { active: false, id: null, mode: null, x: 0, y: 0 };
+const touchMove = {
+  active: false,
+  id: null,
+  mode: null,
+  originX: 0,
+  originY: 0,
+  x: 0,
+  y: 0,
+};
 const achievementsTotal = 4;
 const unlockedAchievements = new Set(JSON.parse(localStorage.getItem("deep-fish-achievements") || "[]"));
 let chosenLevel = "easy";
@@ -252,7 +260,7 @@ function getBiomeAt(y = player.y) {
 
 function maxDiveY() {
   const growth = Math.max(0, player.radius - 24);
-  return clamp(1280 + growth * 58, 1280, WORLD.height - player.radius - 40);
+  return clamp(2400 + growth * 64, 2400, WORLD.height - player.radius - 40);
 }
 
 function nextLockedBiome() {
@@ -1938,8 +1946,8 @@ function drawIntroTips() {
 
   ctx.fillStyle = "#efffff";
   ctx.font = "800 15px system-ui, sans-serif";
-  ctx.fillText("WASD / 方向键  移动", x + 20, y + 60);
-  ctx.fillText("空格  定位自己的 1P", x + 20, y + 84);
+  ctx.fillText("左半屏拖动 / 摇杆  移动", x + 20, y + 60);
+  ctx.fillText("键盘 WASD / 方向键", x + 20, y + 84);
   ctx.fillText("向下探索不同水层生态", x + 20, y + 108);
   ctx.fillStyle = "#ffb36f";
   ctx.fillText("体型不够会被水压挡住", x + 20, y + 136);
@@ -2340,20 +2348,18 @@ function resetTouchStick() {
   touchMove.active = false;
   touchMove.id = null;
   touchMove.mode = null;
+  touchMove.originX = 0;
+  touchMove.originY = 0;
   touchMove.x = 0;
   touchMove.y = 0;
   touchKnob.style.transform = "translate(-50%, -50%)";
 }
 
-function updateTouchStick(clientX, clientY) {
+function applyTouchVector(rawX, rawY) {
   const rect = touchStick.getBoundingClientRect();
-  const centerX = rect.left + rect.width / 2;
-  const centerY = rect.top + rect.height / 2;
-  const max = rect.width * 0.42;
-  const rawX = clientX - centerX;
-  const rawY = clientY - centerY;
+  const max = rect.width * 0.44;
   const distance = Math.hypot(rawX, rawY);
-  if (distance < max * 0.08) {
+  if (distance < max * 0.06) {
     touchMove.x = 0;
     touchMove.y = 0;
     touchKnob.style.transform = "translate(-50%, -50%)";
@@ -2367,12 +2373,33 @@ function updateTouchStick(clientX, clientY) {
   touchKnob.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px))`;
 }
 
+function updateTouchStick(clientX, clientY) {
+  const rect = touchStick.getBoundingClientRect();
+  const centerX = rect.left + rect.width / 2;
+  const centerY = rect.top + rect.height / 2;
+  applyTouchVector(clientX - centerX, clientY - centerY);
+}
+
+function updateScreenDrag(clientX, clientY) {
+  applyTouchVector(clientX - touchMove.originX, clientY - touchMove.originY);
+}
+
 function startTouchControl(id, mode, clientX, clientY) {
   requestLandscape();
   touchMove.active = true;
   touchMove.id = id;
   touchMove.mode = mode;
-  updateTouchStick(clientX, clientY);
+  touchMove.originX = clientX;
+  touchMove.originY = clientY;
+  if (mode === "screen-touch") updateScreenDrag(clientX, clientY);
+  else updateTouchStick(clientX, clientY);
+}
+
+function canStartScreenTouch(event, touch) {
+  if (state !== "playing" && state !== "finale") return false;
+  if (touchMove.active) return false;
+  if (event.target.closest?.("#touch-stick-zone, #touch-locate, button, .overlay")) return false;
+  return touch.clientX <= window.innerWidth * 0.62;
 }
 
 touchStickZone.addEventListener("pointerdown", (event) => {
@@ -2410,7 +2437,18 @@ touchStickZone.addEventListener(
     const touch = event.changedTouches[0];
     if (!touch) return;
     event.preventDefault();
-    startTouchControl(touch.identifier, "touch", touch.clientX, touch.clientY);
+    startTouchControl(touch.identifier, "stick-touch", touch.clientX, touch.clientY);
+  },
+  { passive: false }
+);
+
+window.addEventListener(
+  "touchstart",
+  (event) => {
+    const touch = event.changedTouches[0];
+    if (!touch || !canStartScreenTouch(event, touch)) return;
+    event.preventDefault();
+    startTouchControl(touch.identifier, "screen-touch", touch.clientX, touch.clientY);
   },
   { passive: false }
 );
@@ -2418,11 +2456,12 @@ touchStickZone.addEventListener(
 window.addEventListener(
   "touchmove",
   (event) => {
-    if (!touchMove.active || touchMove.mode !== "touch") return;
+    if (!touchMove.active || (touchMove.mode !== "stick-touch" && touchMove.mode !== "screen-touch")) return;
     const touch = Array.from(event.touches).find((item) => item.identifier === touchMove.id);
     if (!touch) return;
     event.preventDefault();
-    updateTouchStick(touch.clientX, touch.clientY);
+    if (touchMove.mode === "screen-touch") updateScreenDrag(touch.clientX, touch.clientY);
+    else updateTouchStick(touch.clientX, touch.clientY);
   },
   { passive: false }
 );
@@ -2430,7 +2469,7 @@ window.addEventListener(
 window.addEventListener(
   "touchend",
   (event) => {
-    if (touchMove.mode !== "touch") return;
+    if (touchMove.mode !== "stick-touch" && touchMove.mode !== "screen-touch") return;
     const ended = Array.from(event.changedTouches).some((item) => item.identifier === touchMove.id);
     if (ended) resetTouchStick();
   },
@@ -2440,7 +2479,7 @@ window.addEventListener(
 window.addEventListener(
   "touchcancel",
   (event) => {
-    if (touchMove.mode !== "touch") return;
+    if (touchMove.mode !== "stick-touch" && touchMove.mode !== "screen-touch") return;
     const cancelled = Array.from(event.changedTouches).some((item) => item.identifier === touchMove.id);
     if (cancelled) resetTouchStick();
   },
